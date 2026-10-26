@@ -132,13 +132,13 @@ details summary{cursor:pointer;color:var(--wine);font-weight:700;font-size:13px}
 
 <script>
 /* ===== ADAPTER — point these at your backend; leave null for the in-browser mock ===== */
-const API = ""; // same origin — set to null for the in-browser mock
-async function apiIssue(){ if(!API) return mock.issue(); return (await fetch(API+"/issue",{method:"POST"})).json(); }
-async function apiVisit(custodian){ if(!API) return mock.visit(custodian); return (await fetch(API+"/visit/"+custodian,{method:"POST"})).json(); }
-async function apiRevoke(){ if(!API) return mock.revoke(); return (await fetch(API+"/revoke",{method:"POST"})).json(); }
-async function apiDropIssuer(){ if(!API) return mock.dropIssuer(); return (await fetch(API+"/trusted-list/blauw",{method:"DELETE"})).json(); }
+const API = ""; // same origin — set to null for the in-browser mock (null = mock, "" = this server)
+async function apiIssue(){ if(API===null) return mock.issue(); return (await fetch(API+"/issue",{method:"POST"})).json(); }
+async function apiVisit(custodian){ if(API===null) return mock.visit(custodian); return (await fetch(API+"/visit/"+custodian,{method:"POST"})).json(); }
+async function apiRevoke(){ if(API===null) return mock.revoke(); return (await fetch(API+"/revoke",{method:"POST"})).json(); }
+async function apiDropIssuer(){ if(API===null) return mock.dropIssuer(); return (await fetch(API+"/trusted-list/blauw",{method:"DELETE"})).json(); }
 async function apiReset(){ if(API!==null) await fetch(API+"/reset",{method:"POST"}).catch(()=>{}); }
-async function apiParticipant(){ if(!API) return participantCredential; return (await fetch(API+"/participant/rood")).json(); }
+async function apiParticipant(){ if(API===null) return participantCredential; return (await fetch(API+"/participant/rood")).json(); }
 /* ======================================================================================= */
 
 const now = () => new Date().toISOString();
