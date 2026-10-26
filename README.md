@@ -2,6 +2,8 @@
 
 W3C TPAC 2026 hackathon, Dublin — Gerard van der Hoeven, iSHARE Foundation.
 
+**Live demo:** <https://agentic.authorizer.eu> — press 1 → 2 → 3 → 4 (Reset starts over). Everything you click is issued, signed and verified for real; nothing is mocked.
+
 An AI agent needs data that isn't public. It sits behind an API at a party that doesn't own it — a terminal, a carrier, a CRM. The owner of the data (the principal) is a different legal entity than the one hosting it. So we give the agent *legal* agency: the principal issues it a **Data Rights Credential** (W3C VC 2.0, iSHARE profile) stating what it may read, for which purpose, under which licence, for how long. At the door the agent presents two credentials — its **iSHARE participant credential** (the legal prerequisite: it signed the scheme's accession agreement) and the DRC. The custodian verifies the signatures, checks the issuer against the **iSHARE trusted list**, validates the conditions, releases the data under the licence, and sends a **Verification Receipt** credential back to the principal. One mandate, any door in the scheme. The principal stays in control after issuance; the custodian never decides; trust comes from the scheme, not the key.
 
 **For coders, in one line:** every agent stack assumes the parties behind the roles are real, accountable and bound by something, and none of them says by what. Here they are bound by a trust framework: every participant signed the same accession agreement, so a licence in a credential is a contractual obligation with a dispute procedure and sanctions behind it, and the receipt is the rights holder's proof. That is AI with legal guard rails — governance, not protocol.
