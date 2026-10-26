@@ -379,6 +379,13 @@ async function custodianDecides({custodian, presentation, presentationText, chal
   const receipt = await issueReceipt({
     custodian, presentation, presentationText, drc, pc, verification, evaluated, ok, failed, released, requested
   });
+  // the verifier's own obligation, shown with the checks but never part of the access decision
+  const {obligation, status, accepted} = receipt.delivery;
+  checks.push([
+    `Receipt issued to ${obligation.recipient} (${obligation.stated ? 'VerificationReceiptObligation in the DRC' : 'default: the DRC issuer'}, ` +
+    `within ${obligation.deliveryWindow}) · ${accepted ? `accepted ${status}` : 'NOT delivered'}`,
+    Boolean(accepted)
+  ]);
   return {checks, ok, data, receipt};
 }
 
@@ -387,7 +394,21 @@ async function custodianDecides({custodian, presentation, presentationText, chal
  * issued and signed by the custodian, delivered to the rights holder named by the DRC. It attests verification,
  * validation and access by digest, so the rights holder holds proof without the custodian's data or log.
  */
+/** The rights holder's instruction in the DRC's termsOfUse: who gets the receipt, what it must attest, how minimised. */
+function receiptObligation(drc) {
+  const stated = (drc?.termsOfUse ?? []).find(t => t?.type === 'VerificationReceiptObligation');
+  const fallback = drc?.credentialSubject?.receipt ?? {};
+  return {
+    stated: Boolean(stated),
+    recipient: stated?.receiptRecipient ?? fallback.to ?? asId(drc?.issuer) ?? didOf('blauw'),
+    scope: stated?.attestationScope ?? ['verification', 'validation', 'access'],
+    minimisation: stated?.contentMinimisation ?? 'digest',
+    deliveryWindow: stated?.deliveryWindow ?? 'PT24H'
+  };
+}
+
 async function issueReceipt({custodian, presentation, presentationText, drc, pc, verification, evaluated, ok, failed, released}) {
+  const obligation = receiptObligation(drc);
   const presented = [drc, pc].filter(Boolean).map(c => ({
     id: c.id, type: c.type, issuer: asId(c.issuer), credentialDigest: sha256(JSON.stringify(c))
   }));
@@ -395,6 +416,7 @@ async function issueReceipt({custodian, presentation, presentationText, drc, pc,
     id: c.id, type: ['Evidence', ...c.type.filter(t => t !== 'VerifiableCredential')], issuer: c.issuer, digestSRI: c.credentialDigest
   }));
   const rightsHolder = asId(drc?.issuer) ?? didOf('blauw');
+  // digest-only is the default and the only mode implemented: the rights holder learns what happened, not the data
   const subject = {
     id: `urn:uuid:${randomUUID()}`,
     receiptOf: {presentationDigest: sha256(presentationText), presentedCredentials: presented},
@@ -405,7 +427,8 @@ async function issueReceipt({custodian, presentation, presentationText, drc, pc,
     validation: {policySetRef: drc?.id ?? 'urn:ishare:policy-set:none', conditionsEvaluated: evaluated, effect: ok ? 'Permit' : 'Deny'},
     outcome: ok ? 'granted' : 'denied'
   };
-  if(ok) {
+  // attestationScope narrows what is attested; verification and validation are always kept (the schema requires them)
+  if(ok && obligation.scope.includes('access')) {
     subject.access = {
       resource: {...drc.credentialSubject.resource, attributes: released},
       actions: drc.credentialSubject.actions, licenses: drc.credentialSubject.licenses,
@@ -425,13 +448,19 @@ async function issueReceipt({custodian, presentation, presentationText, drc, pc,
     credentialSubject: subject
   };
   const signed = await issueStrictThenLoose({credential, suite: keys[custodian].suite});
-  signed.delivery = await deliverReceipt(signed);
+  signed.delivery = {...await deliverReceipt(signed, obligation.recipient), obligation};
   return signed;
 }
 
-/** Delivery to the rights holder's inbox: an HTTP POST to /receipts when the server is up, the same code path otherwise. */
-async function deliverReceipt(receipt) {
+/**
+ * Delivery to the recipient the DRC names: in this demo every rights holder's inbox is /receipts on this server,
+ * reached by a real HTTP POST when the server is up, by the same code path otherwise.
+ */
+async function deliverReceipt(receipt, recipient) {
   const {delivery: _d, ...payload} = receipt;
+  if(recipient !== didOf('blauw')) {
+    return {endpoint: null, status: 0, accepted: false, error: `no inbox known for ${recipient} in this demo`};
+  }
   if(listening) {
     const res = await fetch(`http://127.0.0.1:${PORT}/receipts`, {
       method: 'POST', headers: {'content-type': 'application/vc'}, body: JSON.stringify(payload)

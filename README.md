@@ -55,9 +55,11 @@ Inspection: `GET /drc`, `GET /participant/:party`, `GET /trusted-list`, `GET /st
 
 First failure stops the walk, answers 403 with that label, and still produces a `denied` receipt.
 
+**9. The verifier's own requirement.** After the decision the custodian honours the DRC's `VerificationReceiptObligation`: it issues the receipt to the named recipient, within the delivery window, and the UI shows the delivery result as a ninth line. It is not part of the access decision — it is what the rights holder is owed either way.
+
 ## The receipt — our proposal to the VC WG
 
-Every visit ends with a `VerificationReceiptCredential`, issued and signed by the custodian, delivered to the rights holder named in the DRC's `termsOfUse` (`VerificationReceiptObligation`). It attests, by digest, what was presented, what was verified (proof, status, trusted list), what was validated (the conditions, each with its result), what was released under which licence — or why not. Blauw's inbox accepts a receipt only from a trusted `DataProvider`, addressed to Blauw, about a credential Blauw actually issued (digest match against its own ledger). That is non-repudiation for the rights holder without a shared ledger and without a verifier-to-issuer call at verification time. Draft schema and context: [schemas.ishare.eu](https://schemas.ishare.eu/#data-rights) (verification-receipt, v3.1 draft).
+The DRC carries, as issuer-placed `termsOfUse`, a `VerificationReceiptObligation`: who must receive the receipt (`receiptRecipient`), within which window (`deliveryWindow`, PT24H), what it must attest (`attestationScope`) and how minimised (`contentMinimisation: digest`). The custodian reads that obligation and acts on it: every visit ends with a `VerificationReceiptCredential`, issued and signed by the custodian, delivered to the recipient the DRC names. It attests, by digest, what was presented, what was verified (proof, status, trusted list), what was validated (the conditions, each with its result), what was released under which licence — or why not. Blauw's inbox accepts a receipt only from a trusted `DataProvider`, addressed to Blauw, about a credential Blauw actually issued (digest match against its own ledger). That is non-repudiation for the rights holder without a shared ledger and without a verifier-to-issuer call at verification time. Draft schema and context: [schemas.ishare.eu](https://schemas.ishare.eu/#data-rights) (verification-receipt, v3.1 draft).
 
 ## Built from W3C blocks
 
