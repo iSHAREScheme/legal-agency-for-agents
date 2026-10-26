@@ -89,6 +89,17 @@ details summary{cursor:pointer;color:var(--wine);font-weight:700;font-size:13px}
       <div class="inbox" id="inbox"></div>
     </div>
     <div class="card">
+      <h3>Inspect the live credentials</h3>
+      <div class="sub">Every object below is signed and served by this server; open it, paste it into any VC 2.0 verifier.</div>
+      <ul style="margin:8px 0 0;padding-left:16px;font-size:13px;line-height:1.7">
+        <li><a href="/drc" target="_blank">Data Rights Credential</a> (latest; issue first) · <a href="https://schemas.ishare.eu/#data-rights" target="_blank">profile</a></li>
+        <li><a href="/participant/rood" target="_blank">iSHARE participant credential · rood</a> · <a href="/participant/groen" target="_blank">groen</a> · <a href="/participant/geel" target="_blank">geel</a></li>
+        <li><a href="/receipts" target="_blank">Verification Receipt credentials</a> (Blauw's inbox, verified on arrival)</li>
+        <li><a href="/status/drc" target="_blank">Bitstring Status List · DRCs (signed by Blauw)</a> · <a href="/status/participants" target="_blank">participants (signed by the scheme)</a></li>
+        <li><a href="/trusted-list" target="_blank">Trusted list</a> · DID documents: <a href="/.well-known/did/blauw.json" target="_blank">blauw</a> · <a href="/.well-known/did/rood.json" target="_blank">rood</a> · <a href="/.well-known/did/groen.json" target="_blank">groen</a> · <a href="/.well-known/did/geel.json" target="_blank">geel</a> · <a href="/.well-known/did/scheme.json" target="_blank">scheme</a></li>
+      </ul>
+    </div>
+    <div class="card">
       <h3>iSHARE trusted list</h3>
       <div class="sub">Who may issue what, with which assurance. The verifier trusts a party admitted to the scheme, not a key.</div>
       <div class="tl" id="tl"></div>
