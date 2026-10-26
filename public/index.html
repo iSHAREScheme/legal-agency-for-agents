@@ -56,6 +56,7 @@ details summary{cursor:pointer;color:var(--wine);font-weight:700;font-size:13px}
     <div class="tag">W3C TPAC hackathon 2026 · Dublin</div>
     <h1>Agents with Legal Agency</h1>
     <p>An agent gets data that isn't public, from a party that doesn't own it. The owner issues a <b>Data Rights Credential</b> (W3C VC 2.0, iSHARE profile); the custodian validates it against the iSHARE scheme — and sends a <b>receipt</b> back. One mandate, several doors.</p>
+    <p><b>Why:</b> AI that acts for people and organisations needs legal guard rails, not just protocol. Every party here signed the same accession agreement, so a licence in a credential is a contractual obligation with a dispute procedure behind it — and the receipt is the rights holder's proof. Trust comes from the scheme, not the key.</p>
   </div>
   <div class="steps">
     <button class="btn" id="b1" onclick="step1()">1 · Issue DRC</button>
@@ -126,7 +127,7 @@ details summary{cursor:pointer;color:var(--wine);font-weight:700;font-size:13px}
 
 <footer>
   <span>Built from W3C blocks: VCDM 2.0 · DIDs · Bitstring Status List · VP. iSHARE adds the profile (schemas.ishare.eu/#data-rights) and the scheme (who may issue).</span>
-  <span>Known shortcuts: static trusted list · legal binding asserted, not enacted · in-memory status list</span>
+  <span>Known shortcuts: static trusted list · legal binding asserted, not enacted · in-memory (but signed) Bitstring Status List · all parties in one process</span>
 </footer>
 
 <script>
@@ -136,6 +137,8 @@ async function apiIssue(){ if(!API) return mock.issue(); return (await fetch(API
 async function apiVisit(custodian){ if(!API) return mock.visit(custodian); return (await fetch(API+"/visit/"+custodian,{method:"POST"})).json(); }
 async function apiRevoke(){ if(!API) return mock.revoke(); return (await fetch(API+"/revoke",{method:"POST"})).json(); }
 async function apiDropIssuer(){ if(!API) return mock.dropIssuer(); return (await fetch(API+"/trusted-list/blauw",{method:"DELETE"})).json(); }
+async function apiReset(){ if(API!==null) await fetch(API+"/reset",{method:"POST"}).catch(()=>{}); }
+async function apiParticipant(){ if(!API) return participantCredential; return (await fetch(API+"/participant/rood")).json(); }
 /* ======================================================================================= */
 
 const now = () => new Date().toISOString();
@@ -227,6 +230,7 @@ async function step2(){
   for (const c of ["groen","geel"]) {
     log(`Agent visits ${c}.example with VP (participant credential + DRC #17)…`);
     const r = await apiVisit(c);
+    if (r.presentation) $("vp").textContent = j(r.presentation);
     renderChecks(c, r.checks);
     $("res-"+c).innerHTML = r.ok ? `<span class="pill ok">200 · released under licence 0001</span>` : `<span class="pill bad">403 · ${r.checks.find(x=>!x[1])[0]}</span>`;
     const d=$("data-"+c); if(r.ok){ d.textContent=j(r.data); d.style.display="block"; } else d.style.display="none";
@@ -243,13 +247,14 @@ async function step4(){
   await apiDropIssuer(); renderTL(); log("Scheme removes did:web:blauw.example from the trusted list. DRC signature is still valid.");
   $("b4").disabled=true; await step2();
 }
-function reset(){
+async function reset(){
+  await apiReset();
   state.drc=null; state.revoked=false; state.trusted["did:web:blauw.example"]=true;
   $("drc").textContent="— not issued yet —"; $("vp").textContent="— nothing presented yet —"; $("inbox").innerHTML=""; $("log").textContent="ready.";
   clearCustodian("groen"); clearCustodian("geel"); renderTL();
   $("b1").disabled=false; $("b2").disabled=true; $("b3").disabled=true; $("b4").disabled=true;
 }
-$("pc").textContent = j(participantCredential); renderTL();
+apiParticipant().then(pc => { $("pc").textContent = j(pc); }); renderTL();
 </script>
 </body>
 </html>

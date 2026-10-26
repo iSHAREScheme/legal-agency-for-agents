@@ -3,7 +3,7 @@
 import express from 'express';
 import {createHash, randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
-import {pathToFileURL} from 'node:url';
+import {fileURLToPath, pathToFileURL} from 'node:url';
 import * as vc from '@digitalbazaar/vc';
 import {randomBytes} from 'node:crypto';
 import {DataIntegrityProof} from '@digitalbazaar/data-integrity';
@@ -537,7 +537,7 @@ app.post('/reset', (req, res) => {
 });
 app.get('/healthz', (req, res) => res.type('text').send('ok'));
 
-app.use(express.static(new URL('./public', import.meta.url).pathname));
+app.use(express.static(fileURLToPath(new URL('./public', import.meta.url))));
 
 export {
   app, state, keys, verifySuite, drcStatus, participantStatus, participantCredentials, trustedList, resetTrustedList,
