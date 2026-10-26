@@ -15,31 +15,31 @@ npm install
 node server.js          # http://localhost:3000
 ```
 
-One process, no network at runtime: five parties (`scheme`, `blauw`, `rood`, `groen`, `geel`) get an Ed25519 Multikey and a `did:web` DID document at boot, resolved from memory. Everything is signed and verified with the Digital Bazaar libraries (`@digitalbazaar/vc`, Data Integrity `eddsa-rdfc-2022`, Bitstring Status List). Nothing is stubbed: a tampered credential, a replayed presentation or a forged receipt fails verification.
+One process, no network at runtime: five parties (`scheme`, `blue`, `red`, `green`, `yellow`) get an Ed25519 Multikey and a `did:web` DID document at boot, resolved from memory. Everything is signed and verified with the Digital Bazaar libraries (`@digitalbazaar/vc`, Data Integrity `eddsa-rdfc-2022`, Bitstring Status List). Nothing is stubbed: a tampered credential, a replayed presentation or a forged receipt fails verification.
 
 ## The five-step demo
 
 Open <http://localhost:3000> and press the buttons, or:
 
 ```bash
-curl -s -X POST localhost:3000/issue                 # 1. Blauw issues DRC #17 to did:web:rood.example
-curl -s -X POST localhost:3000/visit/groen           # 2. the agent presents (participant credential + DRC) → 200, data, receipt
-curl -s -X POST localhost:3000/visit/geel            #    same credential, second door → 200
-curl -s -X POST localhost:3000/revoke                # 3. Blauw flips the status bit; no call to any custodian
-curl -s -X POST localhost:3000/visit/groen           #    → 403 "DRC not revoked", denied receipt still delivered
-curl -s -X DELETE localhost:3000/trusted-list/blauw  # 4. the scheme drops the issuer
+curl -s -X POST localhost:3000/issue                 # 1. Blue issues DRC #17 to did:web:red.example
+curl -s -X POST localhost:3000/visit/green           # 2. the agent presents (participant credential + DRC) → 200, data, receipt
+curl -s -X POST localhost:3000/visit/yellow            #    same credential, second door → 200
+curl -s -X POST localhost:3000/revoke                # 3. Blue flips the status bit; no call to any custodian
+curl -s -X POST localhost:3000/visit/green           #    → 403 "DRC not revoked", denied receipt still delivered
+curl -s -X DELETE localhost:3000/trusted-list/blue  # 4. the scheme drops the issuer
 curl -s -X POST localhost:3000/issue                 #    a fresh, validly signed DRC
-curl -s -X POST localhost:3000/visit/geel            #    → 403 "Issuer on iSHARE trusted list": trust ≠ signature
-curl -s localhost:3000/receipts                      # 5. Blauw's inbox: every visit, granted or denied, as a signed receipt
+curl -s -X POST localhost:3000/visit/yellow            #    → 403 "Issuer on iSHARE trusted list": trust ≠ signature
+curl -s localhost:3000/receipts                      # 5. Blue's inbox: every visit, granted or denied, as a signed receipt
 ```
 
 The issuer is general-purpose. Any body works, defaults are the demo's:
 
 ```bash
 curl -s -X POST localhost:3000/issue -H 'content-type: application/json' \
-  -d '{"holder":"did:web:rood.example","resource":{"type":"Contact","identifiers":["crm:acct/8812"],"attributes":["email","phone"]},"purpose":"support","hours":1}'
-curl -s -X POST 'localhost:3000/visit/geel?attributes=email,phone'          # 200: Geel also runs a small CRM
-curl -s -X POST 'localhost:3000/visit/geel?attributes=email,creditLimitEur' # 403: outside the grant
+  -d '{"holder":"did:web:red.example","resource":{"type":"Contact","identifiers":["crm:acct/8812"],"attributes":["email","phone"]},"purpose":"support","hours":1}'
+curl -s -X POST 'localhost:3000/visit/yellow?attributes=email,phone'          # 200: Yellow also runs a small CRM
+curl -s -X POST 'localhost:3000/visit/yellow?attributes=email,creditLimitEur' # 403: outside the grant
 ```
 
 Inspection: `GET /drc`, `GET /participant/:party`, `GET /trusted-list`, `GET /status/drc`, `GET /status/participants`, `GET /.well-known/did/:party.json`, `GET /receipts`. `POST /reset` restores the trusted list and empties the inbox.
@@ -48,7 +48,7 @@ Inspection: `GET /drc`, `GET /participant/:party`, `GET /trusted-list`, `GET /st
 
 1. DRC signature verifies (eddsa-rdfc-2022)
 2. DRC issuer on the trusted list with role `DataRightsIssuer`
-3. DRC not revoked — Blauw's own signed Bitstring Status List; that the list's issuer equals the credential's issuer is an iSHARE profile rule enforced by the verifier (the spec allows them to differ)
+3. DRC not revoked — Blue's own signed Bitstring Status List; that the list's issuer equals the credential's issuer is an iSHARE profile rule enforced by the verifier (the spec allows them to differ)
 4. VP holder == DRC `credentialSubject.id`; the presentation is signed for this door (`domain`) and this `challenge`
 5. Participant credential: issued by the scheme, not revoked, role `DataConsumer`, status `active`, subject == holder
 6. Conditions from the DRC: `dataspaces` ∩ participant dataspaces ≠ ∅, `ishareCompliant`, `serviceProviders` empty or contains this door
@@ -61,7 +61,7 @@ First failure stops the walk, answers 403 with that label, and still produces a 
 
 ## The receipt — our proposal to the VC WG
 
-The DRC carries, as issuer-placed `termsOfUse`, a `VerificationReceiptObligation`: who must receive the receipt (`receiptRecipient`), within which window (`deliveryWindow`, PT24H), what it must attest (`attestationScope`) and how minimised (`contentMinimisation: digest`). The custodian reads that obligation and acts on it: every visit ends with a `VerificationReceiptCredential`, issued and signed by the custodian, delivered to the recipient the DRC names. It attests, by digest, what was presented, what was verified (proof, status, trusted list), what was validated (the conditions, each with its result), what was released under which licence — or why not. Blauw's inbox accepts a receipt only from a trusted `DataProvider`, addressed to Blauw, about a credential Blauw actually issued (digest match against its own ledger). That is non-repudiation for the rights holder without a shared ledger; the access decision never depends on the receipt (it is issued after the decision, and revocation is checked against a public signed list, never by calling the issuer). Draft schema and context: [schemas.ishare.eu](https://schemas.ishare.eu/#data-rights) (verification-receipt, v3.1 draft).
+The DRC carries, as issuer-placed `termsOfUse`, a `VerificationReceiptObligation`: who must receive the receipt (`receiptRecipient`), within which window (`deliveryWindow`, PT24H), what it must attest (`attestationScope`) and how minimised (`contentMinimisation: digest`). The custodian reads that obligation and acts on it: every visit ends with a `VerificationReceiptCredential`, issued and signed by the custodian, delivered to the recipient the DRC names. It attests, by digest, what was presented, what was verified (proof, status, trusted list), what was validated (the conditions, each with its result), what was released under which licence — or why not. Blue's inbox accepts a receipt only from a trusted `DataProvider`, addressed to Blue, about a credential Blue actually issued (digest match against its own ledger). That is non-repudiation for the rights holder without a shared ledger; the access decision never depends on the receipt (it is issued after the decision, and revocation is checked against a public signed list, never by calling the issuer). Draft schema and context: [schemas.ishare.eu](https://schemas.ishare.eu/#data-rights) (verification-receipt, v3.1 draft).
 
 ## Built from W3C blocks
 

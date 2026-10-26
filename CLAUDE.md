@@ -5,7 +5,7 @@ W3C TPAC 2026 hackathon, Dublin. 90 minutes. Ship a working demo, not a product.
 ## What this is
 An agent gets non-public data from a custodian that does not own it. The rights holder (principal) issues a **Data Rights Credential (DRC)** — W3C VC 2.0, iSHARE profile — to the agent. The custodian verifies + validates it against the iSHARE scheme (trusted list, participant credential, conditions, licence), releases data, and sends a **receipt** VC back to the rights holder. One DRC, several custodians. Revocation at the rights holder → every door says 403.
 
-Parties: `blauw` (rights holder, DRC issuer) · `rood` (agent / data user) · `groen`, `geel` (custodians) · `scheme` (iSHARE scheme owner, issues participant credentials, publishes trusted list).
+Parties: `blue` (rights holder, DRC issuer) · `red` (agent / data user) · `green`, `yellow` (custodians) · `scheme` (iSHARE scheme owner, issues participant credentials, publishes trusted list).
 
 ## Stack — keep it this small
 - Node 20+, plain `express`. One process, `server.js`, port 3000.
@@ -17,8 +17,8 @@ Parties: `blauw` (rights holder, DRC issuer) · `rood` (agent / data user) · `g
 - Frontend: `public/index.html` is already there (`agents-with-legal-agency.html`, rename it). Set its `API` const to `""` (same origin). Do not redesign it.
 
 ## Endpoints (the frontend's adapter expects exactly these shapes)
-- `POST /issue` — body optional `{ holder, resource:{type,identifiers,attributes}, actions, purpose, licenses, conditions, hours }`; defaults = the mock DRC in `public/index.html`. Signs with blauw's key, allocates a status-list index, returns the signed DRC. **This is the general-purpose DRC issuer; it must work with any body, not just the demo defaults.**
-- `POST /visit/:custodian` (`groen` | `geel`) — rood's agent builds a VP (participant credential + latest DRC, with challenge+domain from the custodian), the custodian verifies and validates, returns `{ checks:[[label, bool]...], ok, data|null, receipt }`. Receipt is a signed VC by the custodian, also POSTed to `/receipts` (blauw's inbox).
+- `POST /issue` — body optional `{ holder, resource:{type,identifiers,attributes}, actions, purpose, licenses, conditions, hours }`; defaults = the mock DRC in `public/index.html`. Signs with blue's key, allocates a status-list index, returns the signed DRC. **This is the general-purpose DRC issuer; it must work with any body, not just the demo defaults.**
+- `POST /visit/:custodian` (`green` | `yellow`) — red's agent builds a VP (participant credential + latest DRC, with challenge+domain from the custodian), the custodian verifies and validates, returns `{ checks:[[label, bool]...], ok, data|null, receipt }`. Receipt is a signed VC by the custodian, also POSTed to `/receipts` (blue's inbox).
 - `POST /revoke` — flip the DRC's status bit. `DELETE /trusted-list/:party` — remove from trusted list.
 - `GET /receipts`, `GET /drc` (latest), `GET /participant/:party`, `GET /.well-known/did/:party.json` for inspection.
 

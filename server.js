@@ -26,7 +26,7 @@ const CTX = {
   receipt: 'https://schemas.ishare.eu/v3/verification-receipt/context.jsonld'
 };
 const SCHEME = 'did:web:scheme.ishare.eu';
-const DRC_STATUS_URL = 'https://blauw.example/status/drc';
+const DRC_STATUS_URL = 'https://blue.example/status/drc';
 const PARTICIPANT_STATUS_URL = 'https://scheme.ishare.eu/status/participants';
 const TRUSTED_LIST_URL = 'https://scheme.ishare.eu/trusted-list';
 const FIRST_DRC_INDEX = 17;
@@ -39,29 +39,29 @@ const sha256 = data => `sha256-${createHash('sha256').update(data).digest('base6
 export const didOf = party => party === 'scheme' ? SCHEME : `did:web:${party}.example`;
 const PARTIES = {
   scheme: {name: 'iSHARE scheme owner'},
-  blauw: {name: 'Blauw Shipping B.V.', eori: 'NL987654321', roles: ['DataRightsIssuer', 'DataRightsHolder']},
-  rood: {name: 'Rood Forwarding B.V.', eori: 'NL123456789', roles: ['DataConsumer']},
-  groen: {name: 'Groen Terminal B.V.', eori: 'NL555000111', roles: ['DataProvider']},
-  geel: {name: 'Geel Carrier B.V.', eori: 'NL555000222', roles: ['DataProvider']}
+  blue: {name: 'Blue Shipping B.V.', eori: 'NL987654321', roles: ['DataRightsIssuer', 'DataRightsHolder']},
+  red: {name: 'Red Forwarding B.V.', eori: 'NL123456789', roles: ['DataConsumer']},
+  green: {name: 'Green Terminal B.V.', eori: 'NL555000111', roles: ['DataProvider']},
+  yellow: {name: 'Yellow Carrier B.V.', eori: 'NL555000222', roles: ['DataProvider']}
 };
-const CUSTODIANS = ['groen', 'geel'];
+const CUSTODIANS = ['green', 'yellow'];
 const partyOfDid = d => Object.keys(PARTIES).find(p => didOf(p) === d);
 
-// What the custodians hold. Same container at both doors, different content; geel is also a small CRM.
+// What the custodians hold. Same container at both doors, different content; yellow is also a small CRM.
 const HOLDINGS = {
-  groen: {
+  green: {
     'CONS-2026-104455': {
-      container: 'CONS-2026-104455', eta: '2026-10-27T06:40Z', location: 'Groen Terminal · yard B3',
+      container: 'CONS-2026-104455', eta: '2026-10-27T06:40Z', location: 'Green Terminal · yard B3',
       status: 'discharged', customsValueEur: 184250
     }
   },
-  geel: {
+  yellow: {
     'CONS-2026-104455': {
-      container: 'CONS-2026-104455', eta: '2026-10-27T06:10Z', location: 'vessel MV Geel 7 · berth',
+      container: 'CONS-2026-104455', eta: '2026-10-27T06:10Z', location: 'vessel MV Yellow 7 · berth',
       status: 'arrived', customsValueEur: 184250
     },
     'crm:acct/8812': {
-      account: 'crm:acct/8812', email: 'ops@rood.example', phone: '+31 10 555 0100', creditLimitEur: 25000
+      account: 'crm:acct/8812', email: 'ops@red.example', phone: '+31 10 555 0100', creditLimitEur: 25000
     }
   }
 };
@@ -132,7 +132,7 @@ class StatusRegistry {
     };
   }
 }
-const drcStatus = new StatusRegistry({url: DRC_STATUS_URL, issuerParty: 'blauw'});
+const drcStatus = new StatusRegistry({url: DRC_STATUS_URL, issuerParty: 'blue'});
 drcStatus.next = FIRST_DRC_INDEX;
 const participantStatus = new StatusRegistry({url: PARTICIPANT_STATUS_URL, issuerParty: 'scheme'});
 await drcStatus.publish();
@@ -140,8 +140,8 @@ await participantStatus.publish();
 
 // ---------------------------------------------------------------- participant credentials, trusted list
 const participantCredentials = {};
-for(const party of ['rood', 'blauw', 'groen', 'geel']) {
-  const index = party === 'rood' ? participantStatus.allocate(4471) : participantStatus.allocate();
+for(const party of ['red', 'blue', 'green', 'yellow']) {
+  const index = party === 'red' ? participantStatus.allocate(4471) : participantStatus.allocate();
   participantCredentials[party] = await vc.issue({
     suite: keys.scheme.suite, documentLoader,
     credential: {
@@ -165,7 +165,7 @@ const trustedList = {
 const resetTrustedList = () => {
   trustedList.issuers = [
     {party: 'scheme', did: SCHEME, roles: ['ParticipantCredentialIssuer'], status: 'active'},
-    {party: 'blauw', did: didOf('blauw'), roles: ['DataRightsIssuer'], status: 'active'},
+    {party: 'blue', did: didOf('blue'), roles: ['DataRightsIssuer'], status: 'active'},
     ...CUSTODIANS.map(p => ({party: p, did: didOf(p), roles: ['DataProvider'], status: 'active'}))
   ];
 };
@@ -177,7 +177,7 @@ export const trustedAs = (did, role) =>
 const state = {drc: null, issued: [], receipts: []};
 
 const DEFAULTS = {
-  holder: didOf('rood'),
+  holder: didOf('red'),
   resource: {type: 'Container', identifiers: ['CONS-2026-104455'], attributes: ['eta', 'location', 'status']},
   actions: ['read'],
   purpose: 'arrival-planning',
@@ -228,7 +228,7 @@ export async function issueDrc(body = {}) {
   if(!(hours > 0 && hours <= 24 * 366)) {
     throw new BadRequest('hours must be a positive number');
   }
-  const issuer = didOf('blauw');
+  const issuer = didOf('blue');
   const receipt = {required: true, to: issuer, ...(body.receipt ?? {})};
   const id = `urn:uuid:${randomUUID()}`;
   const index = drcStatus.allocate();
@@ -259,7 +259,7 @@ export async function issueDrc(body = {}) {
       contentMinimisation: 'digest'
     }];
   }
-  const signed = await issueStrictThenLoose({credential, suite: keys.blauw.suite});
+  const signed = await issueStrictThenLoose({credential, suite: keys.blue.suite});
   state.drc = signed;
   state.issued.push(signed);
   return signed;
@@ -270,11 +270,11 @@ export async function issueDrc(body = {}) {
 const skipStatusHere = async () => ({verified: true}); // status is checked by the real library call in check 3
 const usedChallenges = new Set();
 
-/** Rood's agent: builds and signs the presentation for one door. Holder-bound: challenge and domain come from the custodian. */
+/** Red's agent: builds and signs the presentation for one door. Holder-bound: challenge and domain come from the custodian. */
 async function presentAt({custodian, challenge, credentials}) {
-  const presentation = vc.createPresentation({verifiableCredential: credentials, holder: didOf('rood')});
+  const presentation = vc.createPresentation({verifiableCredential: credentials, holder: didOf('red')});
   return vc.signPresentation({
-    presentation, suite: keys.rood.suite, documentLoader, challenge, domain: didOf(custodian)
+    presentation, suite: keys.red.suite, documentLoader, challenge, domain: didOf(custodian)
   });
 }
 
@@ -400,7 +400,7 @@ function receiptObligation(drc) {
   const fallback = drc?.credentialSubject?.receipt ?? {};
   return {
     stated: Boolean(stated),
-    recipient: stated?.receiptRecipient ?? fallback.to ?? asId(drc?.issuer) ?? didOf('blauw'),
+    recipient: stated?.receiptRecipient ?? fallback.to ?? asId(drc?.issuer) ?? didOf('blue'),
     scope: stated?.attestationScope ?? ['verification', 'validation', 'access'],
     minimisation: stated?.contentMinimisation ?? 'digest',
     deliveryWindow: stated?.deliveryWindow ?? 'PT24H'
@@ -415,7 +415,7 @@ async function issueReceipt({custodian, presentation, presentationText, drc, pc,
   const evidence = presented.map(c => ({
     id: c.id, type: ['Evidence', ...c.type.filter(t => t !== 'VerifiableCredential')], issuer: c.issuer, digestSRI: c.credentialDigest
   }));
-  const rightsHolder = asId(drc?.issuer) ?? didOf('blauw');
+  const rightsHolder = asId(drc?.issuer) ?? didOf('blue');
   // digest-only is the default and the only mode implemented: the rights holder learns what happened, not the data
   const subject = {
     id: `urn:uuid:${randomUUID()}`,
@@ -458,7 +458,7 @@ async function issueReceipt({custodian, presentation, presentationText, drc, pc,
  */
 async function deliverReceipt(receipt, recipient) {
   const {delivery: _d, ...payload} = receipt;
-  if(recipient !== didOf('blauw')) {
+  if(recipient !== didOf('blue')) {
     return {endpoint: null, status: 0, accepted: false, error: `no inbox known for ${recipient} in this demo`};
   }
   if(listening) {
@@ -467,12 +467,12 @@ async function deliverReceipt(receipt, recipient) {
     });
     return {endpoint: '/receipts', status: res.status, ...(await res.json())};
   }
-  return {endpoint: '/receipts', status: 201, ...(await blauwInbox(payload))};
+  return {endpoint: '/receipts', status: 201, ...(await blueInbox(payload))};
 }
 
-/** Blauw's inbox: accepts a receipt only from a trusted DataProvider, about a credential Blauw issued, addressed to Blauw. */
-async function blauwInbox(receipt) {
-  const me = didOf('blauw');
+/** Blue's inbox: accepts a receipt only from a trusted DataProvider, about a credential Blue issued, addressed to Blue. */
+async function blueInbox(receipt) {
+  const me = didOf('blue');
   const result = await vc.verifyCredential({credential: receipt, suite: verifySuite, documentLoader});
   if(!result.verified) { throw new BadRequest(`receipt not verified: ${result.error?.message ?? 'bad proof'}`); }
   const issuer = asId(receipt.issuer);
@@ -525,7 +525,7 @@ app.post('/visit/:custodian', wrap(async (req, res) => {
 
   // the custodian challenges, the agent presents, the custodian decides
   const challenge = randomBytes(16).toString('base64url');
-  const presentation = await presentAt({custodian, challenge, credentials: [participantCredentials.rood, state.drc]});
+  const presentation = await presentAt({custodian, challenge, credentials: [participantCredentials.red, state.drc]});
   const presentationText = JSON.stringify(presentation);
   if(usedChallenges.has(challenge)) { throw new BadRequest('challenge reuse'); }
   usedChallenges.add(challenge);
@@ -555,7 +555,7 @@ app.post('/receipts', wrap(async (req, res) => {
   if(!req.is('application/vc') && !req.is('application/json')) {
     return res.status(415).json({error: 'send the receipt as application/vc'});
   }
-  res.status(201).json(await blauwInbox(req.body));
+  res.status(201).json(await blueInbox(req.body));
 }));
 app.get('/receipts', (req, res) => res.json(state.receipts));
 

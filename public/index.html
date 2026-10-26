@@ -78,14 +78,14 @@ details summary{cursor:pointer;color:var(--wine);font-weight:700;font-size:13px}
   <section class="col">
     <h2>Rights holder · principal</h2>
     <div class="card">
-      <h3>Blauw Shipping</h3>
+      <h3>Blue Shipping</h3>
       <div class="sub">Owns the data about container <b>CONS-2026-104455</b>. Does <i>not</i> host it.</div>
       <div style="margin-top:8px"><span class="pill">iSHARE participant</span><span class="pill">DRC issuer</span></div>
       <details style="margin-top:10px" open><summary>Data Rights Credential (issued)</summary><pre id="drc">— not issued yet —</pre></details>
     </div>
     <div class="card">
       <h3>Receipt inbox</h3>
-      <div class="sub">Verifiable proof, held by Blauw — not a log at the custodian.</div>
+      <div class="sub">Verifiable proof, held by Blue — not a log at the custodian.</div>
       <div class="inbox" id="inbox"></div>
     </div>
     <div class="card">
@@ -93,10 +93,10 @@ details summary{cursor:pointer;color:var(--wine);font-weight:700;font-size:13px}
       <div class="sub">Every object below is signed and served by this server; open it, paste it into any VC 2.0 verifier.</div>
       <ul style="margin:8px 0 0;padding-left:16px;font-size:13px;line-height:1.7">
         <li><a href="/drc" target="_blank">Data Rights Credential</a> (latest; issue first) · <a href="https://schemas.ishare.eu/#data-rights" target="_blank">profile</a></li>
-        <li><a href="/participant/rood" target="_blank">iSHARE participant credential · rood</a> · <a href="/participant/groen" target="_blank">groen</a> · <a href="/participant/geel" target="_blank">geel</a></li>
-        <li><a href="/receipts" target="_blank">Verification Receipt credentials</a> (Blauw's inbox, verified on arrival)</li>
-        <li><a href="/status/drc" target="_blank">Bitstring Status List · DRCs (signed by Blauw)</a> · <a href="/status/participants" target="_blank">participants (signed by the scheme)</a></li>
-        <li><a href="/trusted-list" target="_blank">Trusted list</a> · DID documents: <a href="/.well-known/did/blauw.json" target="_blank">blauw</a> · <a href="/.well-known/did/rood.json" target="_blank">rood</a> · <a href="/.well-known/did/groen.json" target="_blank">groen</a> · <a href="/.well-known/did/geel.json" target="_blank">geel</a> · <a href="/.well-known/did/scheme.json" target="_blank">scheme</a></li>
+        <li><a href="/participant/red" target="_blank">iSHARE participant credential · red</a> · <a href="/participant/green" target="_blank">green</a> · <a href="/participant/yellow" target="_blank">yellow</a></li>
+        <li><a href="/receipts" target="_blank">Verification Receipt credentials</a> (Blue's inbox, verified on arrival)</li>
+        <li><a href="/status/drc" target="_blank">Bitstring Status List · DRCs (signed by Blue)</a> · <a href="/status/participants" target="_blank">participants (signed by the scheme)</a></li>
+        <li><a href="/trusted-list" target="_blank">Trusted list</a> · DID documents: <a href="/.well-known/did/blue.json" target="_blank">blue</a> · <a href="/.well-known/did/red.json" target="_blank">red</a> · <a href="/.well-known/did/green.json" target="_blank">green</a> · <a href="/.well-known/did/yellow.json" target="_blank">yellow</a> · <a href="/.well-known/did/scheme.json" target="_blank">scheme</a></li>
       </ul>
     </div>
     <div class="card">
@@ -110,9 +110,9 @@ details summary{cursor:pointer;color:var(--wine);font-weight:700;font-size:13px}
   <section class="col">
     <h2>Agent · data user</h2>
     <div class="card">
-      <h3>Rood Forwarding — ETA agent</h3>
+      <h3>Red Forwarding — ETA agent</h3>
       <div class="sub">Holder of the DRC. Carries it; never owns it.</div>
-      <div style="margin-top:8px"><span class="pill">iSHARE participant credential</span><span class="pill">holder: did:web:rood.example</span></div>
+      <div style="margin-top:8px"><span class="pill">iSHARE participant credential</span><span class="pill">holder: did:web:red.example</span></div>
       <details style="margin-top:10px"><summary>Participant credential (legal prerequisite)</summary><pre id="pc"></pre></details>
       <details style="margin-top:10px"><summary>Verifiable Presentation sent at the door</summary><pre id="vp">— nothing presented yet —</pre></details>
     </div>
@@ -125,19 +125,19 @@ details summary{cursor:pointer;color:var(--wine);font-weight:700;font-size:13px}
   <!-- CUSTODIANS -->
   <section class="col">
     <h2>Custodians · access control</h2>
-    <div class="card" id="c-groen">
-      <h3>Groen Terminal</h3>
-      <div class="sub">Holds the container data. Validates Blauw's conditions; decides nothing itself.</div>
-      <ul class="checks" id="checks-groen"></ul>
-      <div class="result" id="res-groen"></div>
-      <pre id="data-groen" style="display:none"></pre>
+    <div class="card" id="c-green">
+      <h3>Green Terminal</h3>
+      <div class="sub">Holds the container data. Validates Blue's conditions; decides nothing itself.</div>
+      <ul class="checks" id="checks-green"></ul>
+      <div class="result" id="res-green"></div>
+      <pre id="data-green" style="display:none"></pre>
     </div>
-    <div class="card" id="c-geel">
-      <h3>Geel Carrier</h3>
+    <div class="card" id="c-yellow">
+      <h3>Yellow Carrier</h3>
       <div class="sub">Holds the same container. Same resource id, same DRC, different door.</div>
-      <ul class="checks" id="checks-geel"></ul>
-      <div class="result" id="res-geel"></div>
-      <pre id="data-geel" style="display:none"></pre>
+      <ul class="checks" id="checks-yellow"></ul>
+      <div class="result" id="res-yellow"></div>
+      <pre id="data-yellow" style="display:none"></pre>
     </div>
   </section>
 </main>
@@ -154,9 +154,9 @@ const API = ""; // same origin — set to null for the in-browser mock (null = m
 async function apiIssue(){ if(API===null) return mock.issue(); return (await fetch(API+"/issue",{method:"POST"})).json(); }
 async function apiVisit(custodian){ if(API===null) return mock.visit(custodian); return (await fetch(API+"/visit/"+custodian,{method:"POST"})).json(); }
 async function apiRevoke(){ if(API===null) return mock.revoke(); return (await fetch(API+"/revoke",{method:"POST"})).json(); }
-async function apiDropIssuer(){ if(API===null) return mock.dropIssuer(); return (await fetch(API+"/trusted-list/blauw",{method:"DELETE"})).json(); }
+async function apiDropIssuer(){ if(API===null) return mock.dropIssuer(); return (await fetch(API+"/trusted-list/blue",{method:"DELETE"})).json(); }
 async function apiReset(){ if(API!==null) await fetch(API+"/reset",{method:"POST"}).catch(()=>{}); }
-async function apiParticipant(){ if(API===null) return participantCredential; return (await fetch(API+"/participant/rood")).json(); }
+async function apiParticipant(){ if(API===null) return participantCredential; return (await fetch(API+"/participant/red")).json(); }
 /* ======================================================================================= */
 
 const now = () => new Date().toISOString();
@@ -167,32 +167,32 @@ const participantCredential = {
   type:["VerifiableCredential","iSHAREParticipantCredential"],
   issuer:"did:web:scheme.ishare.eu",
   validFrom:"2026-01-01T00:00:00Z", validUntil:"2027-01-01T00:00:00Z",
-  credentialSubject:{ id:"did:web:rood.example", legalName:"Rood Forwarding B.V.", eori:"NL123456789",
+  credentialSubject:{ id:"did:web:red.example", legalName:"Red Forwarding B.V.", eori:"NL123456789",
     role:["DataConsumer"], dataspaces:["dvu"], accessionAgreement:"iSHARE-TF-v3", status:"active" },
   credentialStatus:{ type:"BitstringStatusListEntry", statusListIndex:"4471", statusListCredential:"https://scheme.ishare.eu/status/participants" }
 };
 
-const state = { drc:null, revoked:false, trusted:{ "did:web:scheme.ishare.eu":true, "did:web:blauw.example":true, "did:web:groen.example":true, "did:web:geel.example":true } };
+const state = { drc:null, revoked:false, trusted:{ "did:web:scheme.ishare.eu":true, "did:web:blue.example":true, "did:web:green.example":true, "did:web:yellow.example":true } };
 
 const mock = {
   issue(){
     state.drc = {
       "@context":["https://www.w3.org/ns/credentials/v2","https://schemas.ishare.eu/data-rights/v1"],
       type:["VerifiableCredential","DataRightsCredential"],
-      issuer:"did:web:blauw.example",
+      issuer:"did:web:blue.example",
       validFrom: now(), validUntil: plus(4),
       credentialSubject:{
-        id:"did:web:rood.example",
-        rightsHolder:"did:web:blauw.example",
+        id:"did:web:red.example",
+        rightsHolder:"did:web:blue.example",
         resource:{ type:"Container", identifiers:["CONS-2026-104455"], attributes:["eta","location","status"] },
         actions:["read"],
         purpose:"arrival-planning",
         licenses:["0001"],
         conditions:{ ishareCompliant:true, dataspaces:["dvu"], serviceProviders:[], maxDelegationDepth:0 },
-        receipt:{ required:true, to:"did:web:blauw.example" }
+        receipt:{ required:true, to:"did:web:blue.example" }
       },
-      credentialStatus:{ type:"BitstringStatusListEntry", statusPurpose:"revocation", statusListIndex:"17", statusListCredential:"https://blauw.example/status/drc" },
-      proof:{ type:"DataIntegrityProof", cryptosuite:"eddsa-rdfc-2022", verificationMethod:"did:web:blauw.example#key-1", proofValue:"z3MvG…" }
+      credentialStatus:{ type:"BitstringStatusListEntry", statusPurpose:"revocation", statusListIndex:"17", statusListCredential:"https://blue.example/status/drc" },
+      proof:{ type:"DataIntegrityProof", cryptosuite:"eddsa-rdfc-2022", verificationMethod:"did:web:blue.example#key-1", proofValue:"z3MvG…" }
     };
     state.revoked=false;
     return state.drc;
@@ -200,28 +200,28 @@ const mock = {
   visit(c){
     const checks = [
       ["Signature on DRC verifies (eddsa-rdfc-2022)", true],
-      ["Issuer on iSHARE trusted list", !!state.trusted["did:web:blauw.example"]],
+      ["Issuer on iSHARE trusted list", !!state.trusted["did:web:blue.example"]],
       ["DRC not revoked (Bitstring Status List #17)", !state.revoked],
-      ["Holder == presenter (did:web:rood.example, VP challenge ok)", true],
+      ["Holder == presenter (did:web:red.example, VP challenge ok)", true],
       ["Participant credential valid · role DataConsumer · active", true],
       ["Conditions: dataspace dvu ✓ · iSHARE compliant ✓ · serviceProviders unrestricted ✓", true],
       ["Resource held here: CONS-2026-104455 · attributes read ⊆ granted", true],
       ["Licence 0001 attached to response", true],
     ];
     const ok = checks.every(x=>x[1]);
-    const data = c==="groen"
-      ? { container:"CONS-2026-104455", eta:"2026-10-27T06:40Z", location:"Groen Terminal · yard B3", status:"discharged", licence:"0001" }
-      : { container:"CONS-2026-104455", eta:"2026-10-27T06:10Z", location:"vessel MV Geel 7 · berth", status:"arrived", licence:"0001" };
+    const data = c==="green"
+      ? { container:"CONS-2026-104455", eta:"2026-10-27T06:40Z", location:"Green Terminal · yard B3", status:"discharged", licence:"0001" }
+      : { container:"CONS-2026-104455", eta:"2026-10-27T06:10Z", location:"vessel MV Yellow 7 · berth", status:"arrived", licence:"0001" };
     const receipt = {
       type:["VerifiableCredential","VerificationReceipt"],
       issuer:`did:web:${c}.example`, validFrom: now(),
-      credentialSubject:{ presentedBy:"did:web:rood.example", credential:"drc#17", outcome: ok?"granted":"denied",
+      credentialSubject:{ presentedBy:"did:web:red.example", credential:"drc#17", outcome: ok?"granted":"denied",
         reason: ok?null:checks.find(x=>!x[1])[0], attributesReleased: ok?["eta","location","status"]:[], licence:"0001" }
     };
     return { checks, ok, data: ok?data:null, receipt };
   },
   revoke(){ state.revoked=true; return {ok:true}; },
-  dropIssuer(){ state.trusted["did:web:blauw.example"]=false; return {ok:true}; }
+  dropIssuer(){ state.trusted["did:web:blue.example"]=false; return {ok:true}; }
 };
 
 const $ = id => document.getElementById(id);
@@ -229,7 +229,7 @@ const log = s => { const l=$("log"); l.textContent += "\n"+new Date().toLocaleTi
 const j = o => JSON.stringify(o,null,2);
 
 function renderTL(){
-  $("tl").innerHTML = Object.entries(state.trusted).map(([d,on])=>`<span class="${on?'':'off'}">${d.replace('did:web:','')}${d.includes('scheme')?' · scheme owner':d.includes('blauw')?' · issuer':' · custodian'}</span>`).join("");
+  $("tl").innerHTML = Object.entries(state.trusted).map(([d,on])=>`<span class="${on?'':'off'}">${d.replace('did:web:','')}${d.includes('scheme')?' · scheme owner':d.includes('blue')?' · issuer':' · custodian'}</span>`).join("");
 }
 function renderChecks(c, checks){
   $("checks-"+c).innerHTML = checks.map(([t,ok])=>`<li><span class="ic ${ok?'ok':'bad'}">${ok?'✓':'✗'}</span><span>${t}</span></li>`).join("");
@@ -239,13 +239,13 @@ function clearCustodian(c){ $("checks-"+c).innerHTML=""; $("res-"+c).innerHTML="
 async function step1(){
   const drc = await apiIssue();
   $("drc").textContent = j(drc);
-  log("Blauw issues DataRightsCredential #17 to did:web:rood.example — read eta/location/status, licence 0001, 4h, revocable.");
+  log("Blue issues DataRightsCredential #17 to did:web:red.example — read eta/location/status, licence 0001, 4h, revocable.");
   $("b1").disabled=true; $("b2").disabled=false;
 }
 async function step2(){
-  $("vp").textContent = j({ "@context":["https://www.w3.org/ns/credentials/v2"], type:["VerifiablePresentation"], holder:"did:web:rood.example",
+  $("vp").textContent = j({ "@context":["https://www.w3.org/ns/credentials/v2"], type:["VerifiablePresentation"], holder:"did:web:red.example",
     verifiableCredential:["<iSHAREParticipantCredential>","<DataRightsCredential #17>"], proof:{ type:"DataIntegrityProof", challenge:"<custodian nonce>", domain:"<custodian>" } });
-  for (const c of ["groen","geel"]) {
+  for (const c of ["green","yellow"]) {
     log(`Agent visits ${c}.example with VP (participant credential + DRC #17)…`);
     const r = await apiVisit(c);
     if (r.presentation) $("vp").textContent = j(r.presentation);
@@ -253,23 +253,23 @@ async function step2(){
     $("res-"+c).innerHTML = r.ok ? `<span class="pill ok">200 · released under licence 0001</span>` : `<span class="pill bad">403 · ${r.checks.find(x=>!x[1])[0]}</span>`;
     const d=$("data-"+c); if(r.ok){ d.textContent=j(r.data); d.style.display="block"; } else d.style.display="none";
     $("inbox").insertAdjacentHTML("afterbegin", `<div class="r ${r.ok?'':'denied'}"><b>Receipt from ${c}.example</b> · ${r.receipt.credentialSubject.outcome.toUpperCase()}${r.ok?' · eta, location, status':' · '+r.receipt.credentialSubject.reason}<br><span style="color:var(--mute)">${r.receipt.validFrom}</span></div>`);
-    log(`${c}.example → ${r.ok?"200 granted":"403 denied"}; receipt sent to Blauw.`);
+    log(`${c}.example → ${r.ok?"200 granted":"403 denied"}; receipt sent to Blue.`);
   }
-  $("b3").disabled=state.revoked; $("b4").disabled=!state.trusted["did:web:blauw.example"];
+  $("b3").disabled=state.revoked; $("b4").disabled=!state.trusted["did:web:blue.example"];
 }
 async function step3(){
-  await apiRevoke(); log("Blauw flips status bit #17 → revoked. No call to any custodian.");
+  await apiRevoke(); log("Blue flips status bit #17 → revoked. No call to any custodian.");
   $("b3").disabled=true; await step2();
 }
 async function step4(){
-  await apiDropIssuer(); renderTL(); log("Scheme removes did:web:blauw.example from the trusted list. DRC signature is still valid.");
+  await apiDropIssuer(); renderTL(); log("Scheme removes did:web:blue.example from the trusted list. DRC signature is still valid.");
   $("b4").disabled=true; await step2();
 }
 async function reset(){
   await apiReset();
-  state.drc=null; state.revoked=false; state.trusted["did:web:blauw.example"]=true;
+  state.drc=null; state.revoked=false; state.trusted["did:web:blue.example"]=true;
   $("drc").textContent="— not issued yet —"; $("vp").textContent="— nothing presented yet —"; $("inbox").innerHTML=""; $("log").textContent="ready.";
-  clearCustodian("groen"); clearCustodian("geel"); renderTL();
+  clearCustodian("green"); clearCustodian("yellow"); renderTL();
   $("b1").disabled=false; $("b2").disabled=true; $("b3").disabled=true; $("b4").disabled=true;
 }
 apiParticipant().then(pc => { $("pc").textContent = j(pc); }); renderTL();
