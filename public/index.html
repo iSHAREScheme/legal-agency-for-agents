@@ -58,12 +58,18 @@ details summary{cursor:pointer;color:var(--wine);font-weight:700;font-size:13px}
     <p>An agent gets data that isn't public, from a party that doesn't own it. The owner issues a <b>Data Rights Credential</b> (W3C VC 2.0, iSHARE profile); the custodian validates it against the iSHARE scheme — and sends a <b>receipt</b> back. One mandate, several doors.</p>
     <p><b>Why:</b> AI that acts for people and organisations needs legal guard rails, not just protocol. Every party here signed the same accession agreement, so a licence in a credential is a contractual obligation with a dispute procedure behind it — and the receipt is the rights holder's proof. Trust comes from the scheme, not the key.</p>
   </div>
-  <div class="steps">
+  <div class="steps" style="flex-direction:column;align-items:flex-end;gap:10px">
+    <div class="logos" style="display:flex;align-items:center;gap:18px">
+      <a href="https://www.w3.org/2026/10/TPAC/hackathon/" title="W3C TPAC 2026 hackathon"><img src="https://www.w3.org/StyleSheets/TR/2021/logos/W3C" alt="W3C" style="height:34px;display:block"></a>
+      <a href="https://ishare.eu" title="iSHARE Foundation"><img src="https://avatars.githubusercontent.com/u/42579822?v=4" alt="iSHARE" style="height:40px;width:40px;border-radius:8px;display:block"></a>
+    </div>
+    <div>
     <button class="btn" id="b1" onclick="step1()">1 · Issue DRC</button>
     <button class="btn" id="b2" onclick="step2()" disabled>2 · Agent visits both</button>
     <button class="btn alt" id="b3" onclick="step3()" disabled>3 · Revoke</button>
     <button class="btn alt" id="b4" onclick="step4()" disabled>4 · Drop issuer from trusted list</button>
     <button class="btn ghost" onclick="reset()">Reset</button>
+    </div>
   </div>
 </header>
 
