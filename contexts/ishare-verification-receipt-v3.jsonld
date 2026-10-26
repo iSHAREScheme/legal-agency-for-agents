@@ -1,0 +1,52 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+
+    "VerificationReceiptCredential": "https://schemas.ishare.eu/vocab#VerificationReceiptCredential",
+    "VerificationReceiptObligation": "https://schemas.ishare.eu/vocab#VerificationReceiptObligation",
+    "VerificationReceiptService": "https://schemas.ishare.eu/vocab#VerificationReceiptService",
+
+    "receiptRecipient": { "@id": "https://schemas.ishare.eu/vocab#receiptRecipient", "@type": "@id" },
+    "receiptEndpoint": { "@id": "https://schemas.ishare.eu/vocab#receiptEndpoint", "@type": "@id" },
+    "deliveryWindow": "https://schemas.ishare.eu/vocab#deliveryWindow",
+    "attestationScope": "https://schemas.ishare.eu/vocab#attestationScope",
+    "contentMinimisation": "https://schemas.ishare.eu/vocab#contentMinimisation",
+
+    "receiptOf": "https://schemas.ishare.eu/vocab#receiptOf",
+    "presentationDigest": "https://schemas.ishare.eu/vocab#presentationDigest",
+    "presentedCredentials": "https://schemas.ishare.eu/vocab#presentedCredentials",
+    "credentialDigest": "https://schemas.ishare.eu/vocab#credentialDigest",
+    "presenter": { "@id": "https://schemas.ishare.eu/vocab#presenter", "@type": "@id" },
+    "onBehalfOf": { "@id": "https://schemas.ishare.eu/vocab#onBehalfOf", "@type": "@id" },
+    "verifiedAt": { "@id": "https://schemas.ishare.eu/vocab#verifiedAt", "@type": "http://www.w3.org/2001/XMLSchema#dateTime" },
+
+    "verification": "https://schemas.ishare.eu/vocab#verification",
+    "proofValid": "https://schemas.ishare.eu/vocab#proofValid",
+    "statusChecked": "https://schemas.ishare.eu/vocab#statusChecked",
+    "credentialStatusResult": "https://schemas.ishare.eu/vocab#credentialStatusResult",
+    "issuerOnTrustedList": "https://schemas.ishare.eu/vocab#issuerOnTrustedList",
+    "trustedList": { "@id": "https://schemas.ishare.eu/vocab#trustedList", "@type": "@id" },
+
+    "validation": "https://schemas.ishare.eu/vocab#validation",
+    "policySetRef": "https://schemas.ishare.eu/vocab#policySetRef",
+    "conditionsEvaluated": "https://schemas.ishare.eu/vocab#conditionsEvaluated",
+    "leftOperand": "https://schemas.ishare.eu/vocab#leftOperand",
+    "operator": "https://schemas.ishare.eu/vocab#operator",
+    "rightOperand": "https://schemas.ishare.eu/vocab#rightOperand",
+    "result": "https://schemas.ishare.eu/vocab#result",
+    "effect": "https://schemas.ishare.eu/vocab#effect",
+
+    "access": "https://schemas.ishare.eu/vocab#access",
+    "resource": "https://schemas.ishare.eu/vocab#resource",
+    "identifiers": "https://schemas.ishare.eu/vocab#identifiers",
+    "attributes": "https://schemas.ishare.eu/vocab#attributes",
+    "actions": "https://schemas.ishare.eu/vocab#actions",
+    "licenses": "https://schemas.ishare.eu/vocab#licenses",
+    "grantedAt": { "@id": "https://schemas.ishare.eu/vocab#grantedAt", "@type": "http://www.w3.org/2001/XMLSchema#dateTime" },
+    "responseDigest": "https://schemas.ishare.eu/vocab#responseDigest",
+
+    "outcome": "https://schemas.ishare.eu/vocab#outcome",
+    "denialReason": "https://schemas.ishare.eu/vocab#denialReason"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "ishare": "https://schemas.ishare.eu/vocab#",
+
+    "DataRightsCredential": "ishare:DataRightsCredential",
+    "rightsHolder": { "@id": "ishare:rightsHolder", "@type": "@id" },
+    "resource": {
+      "@id": "ishare:resource",
+      "@context": {
+        "Container": "ishare:Container",
+        "Contact": "ishare:Contact",
+        "identifiers": "ishare:identifiers",
+        "attributes": "ishare:attributes"
+      }
+    },
+    "actions": "ishare:actions",
+    "purpose": "ishare:purpose",
+    "licenses": "ishare:licenses",
+    "conditions": {
+      "@id": "ishare:conditions",
+      "@context": {
+        "ishareCompliant": { "@id": "ishare:ishareCompliant", "@type": "xsd:boolean" },
+        "dataspaces": "ishare:dataspaces",
+        "serviceProviders": { "@id": "ishare:serviceProviders", "@type": "@id" },
+        "maxDelegationDepth": { "@id": "ishare:maxDelegationDepth", "@type": "xsd:integer" }
+      }
+    },
+    "receipt": {
+      "@id": "ishare:receipt",
+      "@context": {
+        "required": { "@id": "ishare:receiptRequired", "@type": "xsd:boolean" },
+        "to": { "@id": "ishare:receiptTo", "@type": "@id" }
+      }
+    },
+
+    "VerificationReceiptObligation": "ishare:VerificationReceiptObligation",
+    "receiptRecipient": { "@id": "ishare:receiptRecipient", "@type": "@id" },
+    "deliveryWindow": "ishare:deliveryWindow",
+    "attestationScope": "ishare:attestationScope",
+    "contentMinimisation": "ishare:contentMinimisation"
+  }
+}

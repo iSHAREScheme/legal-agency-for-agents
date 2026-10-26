@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm init:*)", "Bash(npm install:*)", "Bash(npm i:*)", "Bash(npm run:*)",
+      "Bash(node:*)", "Bash(curl:*)", "Bash(git:*)", "Bash(mkdir:*)", "Bash(ls:*)", "Bash(cat:*)",
+      "Bash(kill:*)", "Bash(lsof:*)", "Bash(pkill:*)",
+      "Read", "Edit", "Write", "Glob", "Grep"
+    ],
+    "deny": ["Bash(rm -rf:*)", "Bash(sudo:*)"]
+  }
+}
