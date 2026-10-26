@@ -46,7 +46,7 @@ Inspection: `GET /drc`, `GET /participant/:party`, `GET /trusted-list`, `GET /st
 
 1. DRC signature verifies (eddsa-rdfc-2022)
 2. DRC issuer on the trusted list with role `DataRightsIssuer`
-3. DRC not revoked — Blauw's own signed Bitstring Status List, issuer match enforced
+3. DRC not revoked — Blauw's own signed Bitstring Status List; that the list's issuer equals the credential's issuer is an iSHARE profile rule enforced by the verifier (the spec allows them to differ)
 4. VP holder == DRC `credentialSubject.id`; the presentation is signed for this door (`domain`) and this `challenge`
 5. Participant credential: issued by the scheme, not revoked, role `DataConsumer`, status `active`, subject == holder
 6. Conditions from the DRC: `dataspaces` ∩ participant dataspaces ≠ ∅, `ishareCompliant`, `serviceProviders` empty or contains this door
@@ -59,7 +59,7 @@ First failure stops the walk, answers 403 with that label, and still produces a 
 
 ## The receipt — our proposal to the VC WG
 
-The DRC carries, as issuer-placed `termsOfUse`, a `VerificationReceiptObligation`: who must receive the receipt (`receiptRecipient`), within which window (`deliveryWindow`, PT24H), what it must attest (`attestationScope`) and how minimised (`contentMinimisation: digest`). The custodian reads that obligation and acts on it: every visit ends with a `VerificationReceiptCredential`, issued and signed by the custodian, delivered to the recipient the DRC names. It attests, by digest, what was presented, what was verified (proof, status, trusted list), what was validated (the conditions, each with its result), what was released under which licence — or why not. Blauw's inbox accepts a receipt only from a trusted `DataProvider`, addressed to Blauw, about a credential Blauw actually issued (digest match against its own ledger). That is non-repudiation for the rights holder without a shared ledger and without a verifier-to-issuer call at verification time. Draft schema and context: [schemas.ishare.eu](https://schemas.ishare.eu/#data-rights) (verification-receipt, v3.1 draft).
+The DRC carries, as issuer-placed `termsOfUse`, a `VerificationReceiptObligation`: who must receive the receipt (`receiptRecipient`), within which window (`deliveryWindow`, PT24H), what it must attest (`attestationScope`) and how minimised (`contentMinimisation: digest`). The custodian reads that obligation and acts on it: every visit ends with a `VerificationReceiptCredential`, issued and signed by the custodian, delivered to the recipient the DRC names. It attests, by digest, what was presented, what was verified (proof, status, trusted list), what was validated (the conditions, each with its result), what was released under which licence — or why not. Blauw's inbox accepts a receipt only from a trusted `DataProvider`, addressed to Blauw, about a credential Blauw actually issued (digest match against its own ledger). That is non-repudiation for the rights holder without a shared ledger; the access decision never depends on the receipt (it is issued after the decision, and revocation is checked against a public signed list, never by calling the issuer). Draft schema and context: [schemas.ishare.eu](https://schemas.ishare.eu/#data-rights) (verification-receipt, v3.1 draft).
 
 ## Built from W3C blocks
 
@@ -73,5 +73,7 @@ VCDM 2.0 · DIDs (`did:web`, Multikey, CID) · Verifiable Credential Data Integr
 - All five parties run in one process; the agent and the custodians share a document loader, so DIDs resolve without the network. Receipts are nevertheless delivered over HTTP (`POST /receipts`).
 - The DRC shape here is the hackathon profile from `CLAUDE.md` (flat `credentialSubject`); the published v3 schema expresses the same grant as `datarightsEvidence.policySets`. Purpose is stated in the DRC and echoed in the receipt, not yet validated at the door.
 - Terms a custom `/issue` body brings that the iSHARE contexts do not define are issued under the VC WG `undefined-terms/v2` context, so they stay visible rather than failing silently.
+- Digests in the receipt (`credentialDigest`, `presentationDigest`) are SHA-256 over the JSON as exchanged, not over a canonical form; the rights holder matches them against its own ledger. A profile should pin a canonicalisation (JCS or RDFC) so third parties can recompute them.
+- Receipts are also sent on `denied` outcomes, and they carry the presenter's DID: a deliberate choice for B2B mandates between legal persons, and the point to discuss under VCDM 2.0 §8.11/§8.14/§8.21 for anything involving natural persons.
 
 Licence: Apache-2.0.
