@@ -6,6 +6,13 @@
     "VerificationReceiptCredential": "https://schemas.ishare.eu/vocab#VerificationReceiptCredential",
     "VerificationReceiptObligation": "https://schemas.ishare.eu/vocab#VerificationReceiptObligation",
     "VerificationReceiptService": "https://schemas.ishare.eu/vocab#VerificationReceiptService",
+    "DataRightsCredential": "https://schemas.ishare.eu/vocab#DataRightsCredential",
+    "Evidence": "https://schemas.ishare.eu/vocab#Evidence",
+    "Container": "https://schemas.ishare.eu/vocab#Container",
+    "Contact": "https://schemas.ishare.eu/vocab#Contact",
+    "iSHAREParticipantCredential": "https://schemas.ishare.eu/vocab#ParticipantCredential",
+    "reason": "https://schemas.ishare.eu/vocab#denialReason",
+    "purpose": "https://schemas.ishare.eu/vocab#purpose",
 
     "receiptRecipient": { "@id": "https://schemas.ishare.eu/vocab#receiptRecipient", "@type": "@id" },
     "receiptEndpoint": { "@id": "https://schemas.ishare.eu/vocab#receiptEndpoint", "@type": "@id" },

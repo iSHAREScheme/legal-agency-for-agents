@@ -5,6 +5,7 @@ import {createHash, randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
 import * as vc from '@digitalbazaar/vc';
+import {randomBytes} from 'node:crypto';
 import {DataIntegrityProof} from '@digitalbazaar/data-integrity';
 import {cryptosuite as eddsaRdfc2022} from '@digitalbazaar/eddsa-rdfc-2022-cryptosuite';
 import * as Ed25519Multikey from '@digitalbazaar/ed25519-multikey';
@@ -264,9 +265,204 @@ export async function issueDrc(body = {}) {
   return signed;
 }
 
+
+// ---------------------------------------------------------------- the door: a custodian verifies, validates, releases, and reports
+const skipStatusHere = async () => ({verified: true}); // status is checked by the real library call in check 3
+const usedChallenges = new Set();
+
+/** Rood's agent: builds and signs the presentation for one door. Holder-bound: challenge and domain come from the custodian. */
+async function presentAt({custodian, challenge, credentials}) {
+  const presentation = vc.createPresentation({verifiableCredential: credentials, holder: didOf('rood')});
+  return vc.signPresentation({
+    presentation, suite: keys.rood.suite, documentLoader, challenge, domain: didOf(custodian)
+  });
+}
+
+const findByType = (presentation, type) =>
+  (presentation.verifiableCredential ?? []).find(c => (c.type ?? []).includes(type));
+const asId = v => typeof v === 'object' ? v?.id : v;
+
+/**
+ * The eight checks of CLAUDE.md, in order, stopping at the first failure. Every verification is the library's own
+ * (signatures, status list, challenge/domain); the validations are the rights holder's conditions, read from the DRC.
+ */
+async function custodianDecides({custodian, presentation, presentationText, challenge, requested}) {
+  const me = didOf(custodian);
+  const checks = [];
+  const evaluated = [];
+  const verification = {
+    verifier: me, proofValid: false, statusChecked: false, credentialStatusResult: 'unknown',
+    issuerOnTrustedList: false, trustedList: TRUSTED_LIST_URL
+  };
+  let data = null;
+  let released = null;
+  const check = (label, ok) => { checks.push([label, Boolean(ok)]); return Boolean(ok); };
+
+  const drc = findByType(presentation, 'DataRightsCredential');
+  const pc = findByType(presentation, 'iSHAREParticipantCredential');
+  const subject = drc?.credentialSubject ?? {};
+  const index = drc?.credentialStatus?.statusListIndex ?? '?';
+
+  decide: {
+    // 1. the rights holder's signature
+    const drcResult = drc ?
+      await vc.verifyCredential({credential: drc, suite: verifySuite, documentLoader, checkStatus: skipStatusHere}) :
+      {verified: false};
+    verification.proofValid = drcResult.verified;
+    if(!check('Signature on DRC verifies (eddsa-rdfc-2022)', drcResult.verified)) { break decide; }
+
+    // 2. the scheme, not the key, says who may issue data rights
+    verification.issuerOnTrustedList = trustedAs(asId(drc.issuer), 'DataRightsIssuer');
+    if(!check('Issuer on iSHARE trusted list (role DataRightsIssuer)', verification.issuerOnTrustedList)) { break decide; }
+
+    // 3. revocation: the rights holder's own Bitstring Status List, signed by the same issuer
+    const status = await checkStatus({credential: drc, documentLoader, suite: verifySuite});
+    verification.statusChecked = status.verified;
+    const revoked = !status.verified || status.results.some(r => r.status === true);
+    verification.credentialStatusResult = !status.verified ? 'unknown' : revoked ? 'revoked' : 'valid';
+    if(!check(`DRC not revoked (Bitstring Status List #${index})`, status.verified && !revoked)) { break decide; }
+
+    // 4. the presenter is the holder the credential was issued to, and signed for this door and this challenge
+    const vp = await vc.verify({
+      presentation, suite: verifySuite, documentLoader, challenge, domain: me, checkStatus: skipStatusHere
+    });
+    const signer = presentation.proof?.verificationMethod?.split('#')[0];
+    const holderOk = vp.presentationResult?.verified && presentation.holder === subject.id && signer === subject.id;
+    if(!check(`Holder == presenter (${subject.id}, VP challenge + domain ok)`, holderOk)) { break decide; }
+
+    // 5. the legal prerequisite: an iSHARE participant credential from the scheme, live, with the right role
+    const pcResult = pc ?
+      await vc.verifyCredential({credential: pc, suite: verifySuite, documentLoader, checkStatus: skipStatusHere}) :
+      {verified: false};
+    const pcStatus = pc ? await checkStatus({credential: pc, documentLoader, suite: verifySuite}) : {verified: false};
+    const pcs = pc?.credentialSubject ?? {};
+    const pcOk = pcResult.verified && pcStatus.verified && !pcStatus.results.some(r => r.status === true) &&
+      asId(pc.issuer) === SCHEME && trustedAs(SCHEME, 'ParticipantCredentialIssuer') &&
+      pcs.id === presentation.holder && (pcs.role ?? []).includes('DataConsumer') && pcs.status === 'active';
+    if(!check('Participant credential valid · issued by scheme · role DataConsumer · active', pcOk)) { break decide; }
+
+    // 6. the rights holder's conditions, validated against the participant credential and this door
+    const cond = subject.conditions ?? {};
+    const shared = (cond.dataspaces ?? []).filter(d => (pcs.dataspaces ?? []).includes(d));
+    const dataspaceOk = !(cond.dataspaces ?? []).length || shared.length > 0;
+    const compliantOk = !cond.ishareCompliant || pcs.accessionAgreement != null;
+    const providersOk = !(cond.serviceProviders ?? []).length || cond.serviceProviders.includes(me);
+    evaluated.push(
+      {leftOperand: 'dataspaces', operator: 'intersects', rightOperand: (cond.dataspaces ?? []).join(','), result: dataspaceOk},
+      {leftOperand: 'ishareCompliant', operator: 'eq', rightOperand: String(Boolean(cond.ishareCompliant)), result: compliantOk},
+      {leftOperand: 'serviceProviders', operator: 'contains', rightOperand: (cond.serviceProviders ?? []).join(',') || '*', result: providersOk}
+    );
+    const label = `Conditions: dataspace ${shared[0] ?? (cond.dataspaces ?? []).join('/')} ${dataspaceOk ? '✓' : '✗'} · ` +
+      `iSHARE compliant ${compliantOk ? '✓' : '✗'} · serviceProviders ${(cond.serviceProviders ?? []).length ? me : 'unrestricted'} ${providersOk ? '✓' : '✗'}`;
+    if(!check(label, dataspaceOk && compliantOk && providersOk)) { break decide; }
+
+    // 7. what this door holds, and no more than the credential grants
+    const held = (subject.resource?.identifiers ?? []).find(id => HOLDINGS[custodian]?.[id]);
+    const granted = subject.resource?.attributes ?? [];
+    const wanted = requested?.length ? requested : granted;
+    const outside = wanted.filter(a => !granted.includes(a));
+    const actionOk = (subject.actions ?? []).includes('read');
+    const resourceOk = Boolean(held) && outside.length === 0 && actionOk;
+    if(!check(`Resource held here: ${held ?? (subject.resource?.identifiers ?? []).join(',')} · attributes ${wanted.join(',')} ⊆ granted`, resourceOk)) { break decide; }
+
+    // 8. the licence travels with the data
+    const licenses = subject.licenses ?? [];
+    const record = HOLDINGS[custodian][held];
+    released = wanted.filter(a => a in record);
+    data = Object.fromEntries(released.map(a => [a, record[a]]));
+    data.licence = licenses[0];
+    if(!check(`Licence ${licenses.join(', ')} attached to response`, licenses.length > 0)) { data = null; released = null; break decide; }
+  }
+
+  const ok = checks.every(([, passed]) => passed);
+  const failed = checks.find(([, passed]) => !passed)?.[0];
+  const receipt = await issueReceipt({
+    custodian, presentation, presentationText, drc, pc, verification, evaluated, ok, failed, released, requested
+  });
+  return {checks, ok, data, receipt};
+}
+
+/**
+ * The receipt: a VerificationReceiptCredential (iSHARE verification-receipt draft, the proposal for the VC WG),
+ * issued and signed by the custodian, delivered to the rights holder named by the DRC. It attests verification,
+ * validation and access by digest, so the rights holder holds proof without the custodian's data or log.
+ */
+async function issueReceipt({custodian, presentation, presentationText, drc, pc, verification, evaluated, ok, failed, released}) {
+  const presented = [drc, pc].filter(Boolean).map(c => ({
+    id: c.id, type: c.type, issuer: asId(c.issuer), credentialDigest: sha256(JSON.stringify(c))
+  }));
+  const evidence = presented.map(c => ({
+    id: c.id, type: ['Evidence', ...c.type.filter(t => t !== 'VerifiableCredential')], issuer: c.issuer, digestSRI: c.credentialDigest
+  }));
+  const rightsHolder = asId(drc?.issuer) ?? didOf('blauw');
+  const subject = {
+    id: `urn:uuid:${randomUUID()}`,
+    receiptOf: {presentationDigest: sha256(presentationText), presentedCredentials: presented},
+    presenter: presentation.holder,
+    onBehalfOf: rightsHolder,
+    verifiedAt: now(),
+    verification,
+    validation: {policySetRef: drc?.id ?? 'urn:ishare:policy-set:none', conditionsEvaluated: evaluated, effect: ok ? 'Permit' : 'Deny'},
+    outcome: ok ? 'granted' : 'denied'
+  };
+  if(ok) {
+    subject.access = {
+      resource: {...drc.credentialSubject.resource, attributes: released},
+      actions: drc.credentialSubject.actions, licenses: drc.credentialSubject.licenses,
+      purpose: drc.credentialSubject.purpose, grantedAt: now()
+    };
+  } else {
+    subject.denialReason = failed;
+    subject.reason = failed;
+  }
+  const credential = {
+    '@context': [V2, CTX.receipt],
+    id: `urn:uuid:${randomUUID()}`,
+    type: ['VerifiableCredential', 'VerificationReceiptCredential'],
+    issuer: didOf(custodian),
+    validFrom: now(),
+    evidence,
+    credentialSubject: subject
+  };
+  const signed = await issueStrictThenLoose({credential, suite: keys[custodian].suite});
+  signed.delivery = await deliverReceipt(signed);
+  return signed;
+}
+
+/** Delivery to the rights holder's inbox: an HTTP POST to /receipts when the server is up, the same code path otherwise. */
+async function deliverReceipt(receipt) {
+  const {delivery: _d, ...payload} = receipt;
+  if(listening) {
+    const res = await fetch(`http://127.0.0.1:${PORT}/receipts`, {
+      method: 'POST', headers: {'content-type': 'application/vc'}, body: JSON.stringify(payload)
+    });
+    return {endpoint: '/receipts', status: res.status, ...(await res.json())};
+  }
+  return {endpoint: '/receipts', status: 201, ...(await blauwInbox(payload))};
+}
+
+/** Blauw's inbox: accepts a receipt only from a trusted DataProvider, about a credential Blauw issued, addressed to Blauw. */
+async function blauwInbox(receipt) {
+  const me = didOf('blauw');
+  const result = await vc.verifyCredential({credential: receipt, suite: verifySuite, documentLoader});
+  if(!result.verified) { throw new BadRequest(`receipt not verified: ${result.error?.message ?? 'bad proof'}`); }
+  const issuer = asId(receipt.issuer);
+  if(!trustedAs(issuer, 'DataProvider')) { throw new BadRequest(`${issuer} is not a trusted DataProvider`); }
+  const s = receipt.credentialSubject ?? {};
+  if(s.onBehalfOf !== me) { throw new BadRequest(`receipt is for ${s.onBehalfOf}, not ${me}`); }
+  const drcRef = (s.receiptOf?.presentedCredentials ?? []).find(c => (c.type ?? []).includes('DataRightsCredential'));
+  const issued = state.issued.find(d => d.id === drcRef?.id);
+  const ledgerMatch = Boolean(issued) && sha256(JSON.stringify(issued)) === drcRef.credentialDigest;
+  const entry = {receivedAt: now(), from: issuer, outcome: s.outcome, drc: drcRef?.id ?? null, ledgerMatch, receipt};
+  state.receipts.unshift(entry);
+  return {accepted: true, id: receipt.id, ledgerMatch};
+}
+
+let listening = false;
+
 // ---------------------------------------------------------------- http
 const app = express();
-app.use(express.json({limit: '256kb'}));
+app.use(express.json({limit: '256kb', type: ['application/json', 'application/vc']}));
 
 const wrap = handler => async (req, res) => {
   try {
@@ -291,6 +487,56 @@ app.get('/.well-known/did/:party.json', (req, res) => {
   const party = req.params.party;
   return keys[party] ? res.json(keys[party].didDocument) : res.status(404).json({error: 'unknown party'});
 });
+
+app.post('/visit/:custodian', wrap(async (req, res) => {
+  const custodian = req.params.custodian;
+  if(!CUSTODIANS.includes(custodian)) { throw new BadRequest(`unknown custodian; choose ${CUSTODIANS.join(' | ')}`); }
+  if(!state.drc) { return res.status(409).json({error: 'no DRC issued yet: POST /issue first'}); }
+  const requested = req.body?.attributes ?? (req.query.attributes ? String(req.query.attributes).split(',') : undefined);
+
+  // the custodian challenges, the agent presents, the custodian decides
+  const challenge = randomBytes(16).toString('base64url');
+  const presentation = await presentAt({custodian, challenge, credentials: [participantCredentials.rood, state.drc]});
+  const presentationText = JSON.stringify(presentation);
+  if(usedChallenges.has(challenge)) { throw new BadRequest('challenge reuse'); }
+  usedChallenges.add(challenge);
+  const decision = await custodianDecides({custodian, presentation, presentationText, challenge, requested});
+  if(decision.ok) { res.set('Link', decision.data.licence ? `<https://licenses.ishare.eu/${decision.data.licence}>; rel="license"` : ''); }
+  res.status(decision.ok ? 200 : 403).json({...decision, presentation});
+}));
+
+app.post('/revoke', wrap(async (req, res) => {
+  const target = req.body?.id ? state.issued.find(d => d.id === req.body.id) : state.drc;
+  if(!target) { return res.status(404).json({error: 'no such DRC'}); }
+  const index = Number(target.credentialStatus.statusListIndex);
+  await drcStatus.set(index, true);
+  res.json({ok: true, id: target.id, statusListIndex: index, statusListCredential: drcStatus.url, revokedAt: now()});
+}));
+
+app.delete('/trusted-list/:party', (req, res) => {
+  const did = didOf(req.params.party);
+  const before = trustedList.issuers.length;
+  trustedList.issuers = trustedList.issuers.filter(i => i.did !== did);
+  trustedList.publishedAt = now();
+  res.json({ok: true, removed: before - trustedList.issuers.length, did, trustedList});
+});
+app.post('/trusted-list/reset', (req, res) => { resetTrustedList(); trustedList.publishedAt = now(); res.json({ok: true, trustedList}); });
+
+app.post('/receipts', wrap(async (req, res) => {
+  if(!req.is('application/vc') && !req.is('application/json')) {
+    return res.status(415).json({error: 'send the receipt as application/vc'});
+  }
+  res.status(201).json(await blauwInbox(req.body));
+}));
+app.get('/receipts', (req, res) => res.json(state.receipts));
+
+app.post('/reset', (req, res) => {
+  resetTrustedList();
+  state.receipts = [];
+  res.json({ok: true});
+});
+app.get('/healthz', (req, res) => res.type('text').send('ok'));
+
 app.use(express.static(new URL('./public', import.meta.url).pathname));
 
 export {
@@ -299,5 +545,5 @@ export {
 };
 
 if(import.meta.url === pathToFileURL(process.argv[1]).href) {
-  app.listen(PORT, () => console.log(`agents-with-legal-agency on http://localhost:${PORT}`));
+  app.listen(PORT, () => { listening = true; console.log(`agents-with-legal-agency on http://localhost:${PORT}`); });
 }
